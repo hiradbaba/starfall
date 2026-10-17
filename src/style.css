@@ -1,0 +1,125 @@
+:root {
+  --bg: #04050c;
+  --cyan: #5ef6ff;
+  --magenta: #ff5ef1;
+  --dim: #56648a;
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  background: var(--bg);
+  color: var(--cyan);
+  font-family: 'SF Mono', Menlo, Consolas, 'DejaVu Sans Mono', monospace;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+#game {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+#name-form {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 8px;
+  width: min(420px, calc(100% - 32px));
+}
+
+#name-form[hidden] {
+  display: none;
+}
+
+#name-form label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+#name-form input,
+#name-form button {
+  font: inherit;
+  font-size: 18px;
+  color: var(--cyan);
+  background: rgba(94, 246, 255, 0.06);
+  border: 1px solid var(--cyan);
+  border-radius: 4px;
+  padding: 10px 12px;
+  box-shadow: 0 0 12px rgba(94, 246, 255, 0.35);
+}
+
+#name-form input {
+  flex: 1;
+  min-width: 0;
+  outline: none;
+}
+
+#name-form button {
+  cursor: pointer;
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.touch {
+  display: none;
+}
+
+@media (pointer: coarse) {
+  .touch {
+    position: absolute;
+    inset: auto 16px max(16px, env(safe-area-inset-bottom)) 16px;
+    display: grid;
+    grid-template-columns: repeat(3, 56px) 1fr repeat(3, 64px);
+    grid-template-rows: repeat(3, 48px);
+    grid-template-areas:
+      '.    up   .     . .       .   pause'
+      'left .    right . special rpg .'
+      '.    down .     . fire    fire fire';
+    gap: 6px;
+    pointer-events: none;
+  }
+
+  .touch-btn {
+    pointer-events: auto;
+    font: inherit;
+    font-size: 14px;
+    color: var(--cyan);
+    background: rgba(94, 246, 255, 0.08);
+    border: 1px solid rgba(94, 246, 255, 0.5);
+    border-radius: 8px;
+    touch-action: none;
+  }
+
+  .touch-special {
+    color: var(--magenta);
+    border-color: rgba(255, 94, 241, 0.6);
+  }
+}
