@@ -203,6 +203,8 @@ export function playScreen(app: App, initial: GameState): Screen {
 
     keyDown(key: KeyPress) {
       if (paused) {
+        // Auto-repeat from the key that opened the menu must not close it again.
+        if (key.repeat) return;
         if (key.code === 'Escape' || key.code === 'KeyP') resume();
         else pauseMenu.keyDown(key.code);
         return;

@@ -36,8 +36,11 @@ export function saveAndQuit(store: KeyValueStore, state: GameState): number | nu
   return record(store, state);
 }
 
-/** Game over: the run can no longer be continued (2019 bug #12). */
+/**
+ * Game over: the run can no longer be continued (2019 bug #12). Only this
+ * run's save is cleared; a different run saved earlier stays continuable.
+ */
 export function finishGame(store: KeyValueStore, state: GameState): number | null {
-  store.remove(KEYS.save);
+  if (loadSave(store)?.runId === state.runId) store.remove(KEYS.save);
   return record(store, state);
 }

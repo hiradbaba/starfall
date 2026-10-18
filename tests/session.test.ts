@@ -21,6 +21,14 @@ describe('session', () => {
     expect(loadScores(store)[0]!.score).toBe(20);
   });
 
+  it('losing a different run keeps the saved run (review fix)', () => {
+    const store = memoryStore();
+    const saved = { ...createGame('Ace', 1), score: 12 };
+    saveAndQuit(store, saved);
+    finishGame(store, { ...createGame('Ace', 2), score: 3, over: true });
+    expect(loadSave(store)).toEqual(saved);
+  });
+
   it('discards a corrupt save', () => {
     const store = memoryStore();
     store.set(KEYS.save, 'corrupt');

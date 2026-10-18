@@ -50,6 +50,18 @@ test('menu → name → play → save & quit → reload → continue', async ({ 
   expect(errors).toEqual([]);
 });
 
+test('holding pause does not immediately resume (review fix)', async ({ page }) => {
+  await startGame(page, 'Holder');
+  await page.keyboard.press('KeyP');
+  await expect(page.locator('#live')).toHaveText('Paused');
+  // OS auto-repeat while P is still held down.
+  await page.evaluate(() =>
+    window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyP', repeat: true })),
+  );
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#live')).toHaveText('SAVE & QUIT');
+});
+
 test('leaving the tab pauses the game', async ({ page }) => {
   await startGame(page, 'Blur');
   await page.evaluate(() => window.dispatchEvent(new Event('blur')));
@@ -109,3 +121,38 @@ test.describe('touch devices', () => {
     await expect(screen(page)).toHaveAttribute('data-screen', 'play');
   });
 });
+
+for (const viewport of [
+  { width: 375, height: 667 },
+  { width: 390, height: 844 },
+  { width: 844, height: 390 },
+]) {
+  test.describe(`touch layout ${viewport.width}x${viewport.height} (review fix)`, () => {
+    test.use({ hasTouch: true, isMobile: true, viewport });
+
+    test('every control is on screen and pause is top-right', async ({ page }) => {
+      await startGame(page, 'Layout');
+      for (const button of await page.locator('.touch-btn').all()) {
+        const box = (await button.boundingBox())!;
+        expect(box.x).toBeGreaterThanOrEqual(0);
+        expect(box.y).toBeGreaterThanOrEqual(0);
+        expect(box.x + box.width).toBeLessThanOrEqual(viewport.width);
+        expect(box.y + box.height).toBeLessThanOrEqual(viewport.height);
+      }
+      const pause = (await page.locator('.touch-pause').boundingBox())!;
+      expect(pause.y + pause.height).toBeLessThan(viewport.height / 4);
+      expect(pause.x).toBeGreaterThan(viewport.width / 2);
+    });
+
+    if (viewport.height > viewport.width) {
+      test('controls sit below the game canvas, not over it', async ({ page }) => {
+        await startGame(page, 'Layout');
+        const canvas = (await page.locator('#game').boundingBox())!;
+        for (const area of ['up', 'left', 'right', 'down', 'fire', 'special', 'rpg']) {
+          const box = (await page.locator(`.touch-${area}`).boundingBox())!;
+          expect(box.y).toBeGreaterThanOrEqual(canvas.y + canvas.height);
+        }
+      });
+    }
+  });
+}

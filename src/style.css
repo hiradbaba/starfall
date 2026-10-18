@@ -24,6 +24,8 @@ body {
 #stage {
   position: fixed;
   inset: 0;
+  display: flex;
+  flex-direction: column;
   touch-action: none;
   user-select: none;
   -webkit-user-select: none;
@@ -31,8 +33,9 @@ body {
 
 #game {
   display: block;
+  flex: 1;
+  min-height: 0;
   width: 100%;
-  height: 100%;
 }
 
 #name-form {
@@ -93,18 +96,29 @@ body {
 }
 
 @media (pointer: coarse) {
+  /* Portrait: the pad takes its own space below the canvas, so it never covers the playfield. */
   .touch {
-    position: absolute;
-    inset: auto 16px max(16px, env(safe-area-inset-bottom)) 16px;
     display: grid;
-    grid-template-columns: repeat(3, 56px) 1fr repeat(3, 64px);
-    grid-template-rows: repeat(3, 48px);
+    flex: none;
+    margin: 0 16px max(16px, env(safe-area-inset-bottom));
+    grid-template-columns: repeat(3, minmax(40px, 56px)) 1fr repeat(3, minmax(48px, 64px));
+    grid-template-rows: repeat(3, 44px);
     grid-template-areas:
-      '.    up   .     . .       .   pause'
-      'left .    right . special rpg .'
+      '.    up   .     . .       .   .'
+      'left .    right . special rpg rpg'
       '.    down .     . fire    fire fire';
     gap: 6px;
     pointer-events: none;
+  }
+
+  /* Landscape: the grid is narrow, so the pad overlays the empty sides instead. */
+  @media (orientation: landscape) {
+    .touch {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+    }
   }
 
   .touch-btn {
@@ -121,5 +135,13 @@ body {
   .touch-special {
     color: var(--magenta);
     border-color: rgba(255, 94, 241, 0.6);
+  }
+
+  .touch-pause {
+    position: fixed;
+    top: max(12px, env(safe-area-inset-top));
+    right: 16px;
+    width: 48px;
+    height: 40px;
   }
 }
