@@ -5,6 +5,7 @@ import { isGameKey } from '../input/keyboard';
 import { COLORS, type View } from '../render/grid';
 import { finishGame, saveAndQuit } from '../session';
 import type { App, KeyPress, Screen } from './app';
+import { controlRows, drawControls } from './controls';
 import { gameOverScreen } from './gameover';
 import { menuScreen } from './menu';
 import { MenuList } from './menuList';
@@ -37,17 +38,27 @@ export function playScreen(app: App, initial: GameState): Screen {
   let prev = initial;
   let acc = 0;
   let paused = false;
+  /** Every run starts on the controls card and waits for the player. */
+  let briefing = true;
+  /** The pause menu's CONTROLS card is open. */
+  let showControls = false;
   let deathLeft = DEATH_MS;
   let rank: number | null = null;
   let banner = { text: '', left: 0 };
   app.keys.clear();
 
+  const launch = () => {
+    briefing = false;
+    acc = 0;
+    app.keys.clear();
+    app.announce(`Launch! Pilot ${state.pilot}.`);
+  };
   const resume = () => {
     paused = false;
     app.keys.clear();
   };
   const pause = () => {
-    if (paused || state.over) return;
+    if (paused || state.over || briefing) return;
     paused = true;
     app.keys.clear();
     pauseMenu.index = 0;
@@ -60,6 +71,18 @@ export function playScreen(app: App, initial: GameState): Screen {
         label: 'RESUME',
         enabled: true,
         run: resume,
+      },
+      {
+        label: 'CONTROLS',
+        enabled: true,
+        run: () => {
+          showControls = true;
+          app.announce(
+            controlRows(app.touch)
+              .map((r) => `${r.key}: ${r.action}`)
+              .join('. '),
+          );
+        },
       },
       {
         label: 'SAVE & QUIT',
@@ -112,13 +135,19 @@ export function playScreen(app: App, initial: GameState): Screen {
       `Score ${state.score} · Level ${state.level} · RPG ${state.rpgCharges} · Pilot ${state.pilot}`,
     );
   updateHud();
-  app.announce(`Launch! Pilot ${state.pilot}.`);
+  app.announce('Briefing. Press any key to launch.');
 
   return {
     name: 'play',
 
     update(dt) {
       banner.left = Math.max(0, banner.left - dt);
+      if (briefing) {
+        // Touch buttons press virtual keys, so any input on the pad launches too.
+        const f = app.keys.poll();
+        if (f.dx || f.dy || f.fire || f.special || f.rpg || f.pause) launch();
+        return;
+      }
       if (paused) return;
       if (state.over) {
         deathLeft -= dt;
@@ -190,18 +219,40 @@ export function playScreen(app: App, initial: GameState): Screen {
       view.text(14, ROWS, `LEVEL ${state.level}`, COLORS.yellow, 6);
       view.text(26, ROWS, `RPG ${rpgs}`, COLORS.yellow, 6);
       view.text(0, ROWS + 1, `PILOT ${state.pilot}`, COLORS.dim, 0);
-      view.text(COLS - 18, ROWS + 1, 'SPC C X · P pause', COLORS.dim, 0);
+      const hint = app.touch ? 'II pause · controls' : 'P pause · controls';
+      view.text(COLS - [...hint].length, ROWS + 1, hint, COLORS.dim, 0);
 
       if (banner.left > 0) view.centered(10, banner.text, COLORS.yellow, 20);
-      if (paused) {
-        ctx.fillStyle = 'rgba(4, 5, 12, 0.75)';
+      if (briefing || paused) {
+        ctx.fillStyle = 'rgba(4, 5, 12, 0.8)';
         ctx.fillRect(0, 0, view.width, view.height);
+      }
+      if (briefing) {
+        drawControls(view, 7, app.touch, 'MISSION BRIEFING');
+        view.centered(
+          21,
+          app.touch ? 'tap to launch' : 'press any key to launch',
+          COLORS.yellow,
+          12,
+        );
+      } else if (paused && showControls) {
+        drawControls(view, 9, app.touch);
+        view.centered(22, app.touch ? 'tap to return' : 'any key to return', COLORS.dim, 0);
+      } else if (paused) {
         view.centered(10, 'P A U S E D', COLORS.cyan, 16);
         pauseMenu.draw(view);
       }
     },
 
     keyDown(key: KeyPress) {
+      if (briefing) {
+        if (!key.repeat) launch();
+        return;
+      }
+      if (paused && showControls) {
+        if (!key.repeat) showControls = false;
+        return;
+      }
       if (paused) {
         // Auto-repeat from the key that opened the menu must not close it again.
         if (key.repeat) return;
@@ -217,7 +268,9 @@ export function playScreen(app: App, initial: GameState): Screen {
     },
 
     tap(_col, row) {
-      if (paused) pauseMenu.tap(row);
+      if (briefing) launch();
+      else if (showControls) showControls = false;
+      else if (paused) pauseMenu.tap(row);
     },
 
     blur: pause,

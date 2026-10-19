@@ -26,6 +26,7 @@ const app: App = {
   audio,
   keys,
   fx,
+  touch: matchMedia('(pointer: coarse)').matches,
   go(next) {
     current?.leave?.();
     current = next;

@@ -1,7 +1,8 @@
 import { COLS, PILOT_MAX, ROWS } from './config';
 import type { Enemy, GameState, Point, Rpg, Shot } from './state';
 
-export const SAVE_VERSION = 1;
+/** 2: adds `nextShot` weapon cooldowns. */
+export const SAVE_VERSION = 2;
 
 export function serialise(state: GameState): string {
   return JSON.stringify({ version: SAVE_VERSION, state });
@@ -40,7 +41,7 @@ function isRpg(v: unknown): v is Rpg {
 
 function isGameState(v: unknown): v is GameState {
   if (!isRecord(v)) return false;
-  const { player, pilot, nextWave } = v;
+  const { player, pilot, nextWave, nextShot } = v;
   return (
     isNat(v.runId) &&
     typeof pilot === 'string' &&
@@ -69,6 +70,9 @@ function isGameState(v: unknown): v is GameState {
     isRecord(nextWave) &&
     isNat(nextWave.green) &&
     isNat(nextWave.special) &&
+    isRecord(nextShot) &&
+    isNat(nextShot.normal) &&
+    isNat(nextShot.special) &&
     v.over === false
   );
 }

@@ -19,6 +19,14 @@ async function startGame(page: Page, pilot: string) {
   await page.locator('#pilot').fill(pilot);
   await page.keyboard.press('Enter');
   await expect(screen(page)).toHaveAttribute('data-screen', 'play');
+  await launch(page, pilot);
+}
+
+/** Dismisses the pre-run briefing card. */
+async function launch(page: Page, pilot: string) {
+  await expect(page.locator('#live')).toHaveText('Briefing. Press any key to launch.');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#live')).toHaveText(`Launch! Pilot ${pilot}.`);
 }
 
 test('menu → name → play → save & quit → reload → continue', async ({ page }) => {
@@ -37,6 +45,8 @@ test('menu → name → play → save & quit → reload → continue', async ({ 
   await page.keyboard.press('KeyP');
   await expect(page.locator('#live')).toHaveText('Paused');
   await page.keyboard.press('ArrowDown');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#live')).toHaveText('SAVE & QUIT');
   await page.keyboard.press('Enter');
   await expect(screen(page)).toHaveAttribute('data-screen', 'menu');
 
@@ -45,6 +55,7 @@ test('menu → name → play → save & quit → reload → continue', async ({ 
   await expect(page.locator('#live')).toHaveText('CONTINUE');
   await page.keyboard.press('Enter');
   await expect(screen(page)).toHaveAttribute('data-screen', 'play');
+  await launch(page, 'Smoke Tester');
   await expect(page.locator('#hud')).toContainText('Pilot Smoke Tester');
 
   expect(errors).toEqual([]);
@@ -59,7 +70,29 @@ test('holding pause does not immediately resume (review fix)', async ({ page }) 
     window.dispatchEvent(new KeyboardEvent('keydown', { code: 'KeyP', repeat: true })),
   );
   await page.keyboard.press('ArrowDown');
-  await expect(page.locator('#live')).toHaveText('SAVE & QUIT');
+  await expect(page.locator('#live')).toHaveText('CONTROLS');
+});
+
+test('a new run waits on the briefing until a key is pressed', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('Enter');
+  await page.locator('#pilot').fill('Rookie');
+  await page.keyboard.press('Enter');
+  await expect(page.locator('#live')).toHaveText('Briefing. Press any key to launch.');
+  await page.waitForTimeout(1500);
+  await expect(page.locator('#live')).toHaveText('Briefing. Press any key to launch.');
+  await page.keyboard.press('Space');
+  await expect(page.locator('#live')).toHaveText('Launch! Pilot Rookie.');
+});
+
+test('the menu has a HOW TO PLAY screen', async ({ page }) => {
+  await page.goto('/');
+  await page.keyboard.press('ArrowDown');
+  await expect(page.locator('#live')).toHaveText('HOW TO PLAY');
+  await page.keyboard.press('Enter');
+  await expect(screen(page)).toHaveAttribute('data-screen', 'controls');
+  await page.keyboard.press('Escape');
+  await expect(screen(page)).toHaveAttribute('data-screen', 'menu');
 });
 
 test('leaving the tab pauses the game', async ({ page }) => {
@@ -90,13 +123,15 @@ test('dying shows game over, records the score, and clears the save', async ({ p
       nextId: 2,
       rng: 1,
       nextWave: { green: 1000000, special: 1000000 },
+      nextShot: { normal: 0, special: 0 },
       over: false,
     };
-    localStorage.setItem('starfall.save', JSON.stringify({ version: 1, state }));
+    localStorage.setItem('starfall.save', JSON.stringify({ version: 2, state }));
   });
   await page.reload();
   await page.keyboard.press('ArrowDown');
   await page.keyboard.press('Enter');
+  await launch(page, 'Doomed');
   await expect(screen(page)).toHaveAttribute('data-screen', 'gameover', { timeout: 5000 });
   await expect(page.locator('#live')).toHaveText('Game over. Score 7, level 0.');
 

@@ -1,6 +1,7 @@
 import { COLORS, type View } from '../render/grid';
 import { loadSave } from '../session';
 import type { App, KeyPress, Screen } from './app';
+import { controlsScreen } from './controls';
 import { highScoresScreen } from './highscores';
 import { MenuList } from './menuList';
 import { nameScreen } from './name';
@@ -19,6 +20,7 @@ export function menuScreen(app: App): Screen {
         enabled: save !== null,
         run: () => save && app.go(playScreen(app, save)),
       },
+      { label: 'HOW TO PLAY', enabled: true, run: () => app.go(controlsScreen(app)) },
       { label: 'HIGH SCORES', enabled: true, run: () => app.go(highScoresScreen(app)) },
     ],
     17,

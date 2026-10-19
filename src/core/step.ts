@@ -1,6 +1,7 @@
 import {
   COLS,
   ENEMY_WIDTH,
+  FIRE_COOLDOWN_TICKS,
   PLAYER_WIDTH,
   ROWS,
   RPG_RANGE,
@@ -41,6 +42,8 @@ export function step(prev: GameState, input: InputFrame): StepResult {
 
   // 2. Weapons spawn at the ship's nose.
   const fire = (kind: ShotKind) => {
+    if (s.tick < s.nextShot[kind]) return;
+    s.nextShot[kind] = s.tick + FIRE_COOLDOWN_TICKS;
     s.shots.push({ id: s.nextId++, kind, x: s.player.x + SHOT_OFFSET, y: s.player.y });
     events.push({ type: 'shot', kind });
   };

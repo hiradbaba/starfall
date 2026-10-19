@@ -29,6 +29,8 @@ export interface App {
   audio: AudioEngine;
   keys: KeyState;
   fx: Effects;
+  /** Coarse pointer (phone/tablet): show touch button names instead of keys. */
+  touch: boolean;
   /** Screen-reader announcement (aria-live). */
   announce(text: string): void;
   /** Text mirror of the HUD (score, level, RPG) for assistive tech and tests. */

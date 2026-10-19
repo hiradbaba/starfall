@@ -89,6 +89,38 @@ describe('step: shooting', () => {
   });
 });
 
+describe('step: fire cooldown', () => {
+  it('holding fire shoots once every 3 ticks, not every tick', () => {
+    let g = quietGame({ player: { x: 10, y: 30 } });
+    let shots = 0;
+    for (let i = 0; i < 9; i++) {
+      const r = step(g, input({ fire: true }));
+      shots += r.events.filter((e) => e.type === 'shot').length;
+      g = r.state;
+    }
+    expect(shots).toBe(3);
+  });
+
+  it('tapping faster than the cooldown adds no extra shots', () => {
+    let g = quietGame({ player: { x: 10, y: 30 } });
+    g = step(g, input({ fire: true })).state;
+    g = step(g, input()).state;
+    const r = step(g, input({ fire: true }));
+    expect(r.events.some((e) => e.type === 'shot')).toBe(false);
+    expect(step(r.state, input({ fire: true })).events).toContainEqual({
+      type: 'shot',
+      kind: 'normal',
+    });
+  });
+
+  it('normal and special shots have separate cooldowns', () => {
+    const g = quietGame({ player: { x: 10, y: 30 } });
+    const first = step(g, input({ fire: true })).state;
+    const r = step(first, input({ special: true }));
+    expect(r.events).toContainEqual({ type: 'shot', kind: 'special' });
+  });
+});
+
 describe('step: RPG (2019 bug #7)', () => {
   it('launches once, uses a charge, and travels before detonating', () => {
     const g = quietGame({ player: { x: 10, y: 8 } });

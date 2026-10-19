@@ -13,3 +13,5 @@ export const START_RPG = 3;
 export const SPECIAL_FROM_LEVEL = 2;
 export const KILLS_PER_LEVEL = 10;
 export const PILOT_MAX = 16;
+/** A held weapon fires at most once every this many ticks. */
+export const FIRE_COOLDOWN_TICKS = 3;

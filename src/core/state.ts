@@ -49,6 +49,8 @@ export interface GameState {
   rng: number;
   /** Tick at which the next wave of each kind spawns. */
   nextWave: Record<EnemyKind, number>;
+  /** Tick at which each weapon can fire again. */
+  nextShot: Record<ShotKind, number>;
   over: boolean;
 }
 
@@ -94,6 +96,7 @@ export function createGame(pilot: string, seed: number): GameState {
     nextId: 1,
     rng: seed >>> 0,
     nextWave: { green: 0, special: 0 },
+    nextShot: { normal: 0, special: 0 },
     over: false,
   };
 }
